@@ -44,5 +44,36 @@ function myCustomFetcher(url, options) {
     });
 }
 fetchUserData("https://api.github.com/users");
+// Real-time search functionality
+let searchTimeout;
+getUsername.addEventListener("input", (event) => {
+    clearTimeout(searchTimeout);
+    const searchQuery = getUsername.value.trim();
+    if (!searchQuery) {
+        fetchUserData("https://api.github.com/users");
+        return;
+    }
+    // Debounce search to avoid too many API requests
+    searchTimeout = setTimeout(() => {
+        main_container.innerHTML = "";
+        const searchUrl = `https://api.github.com/search/users?q=${encodeURIComponent(searchQuery)}&per_page=12`;
+        myCustomFetcher(searchUrl, {}).then((response) => {
+            if (response.items.length === 0) {
+                main_container.innerHTML = `<p class="error">No users found for "${searchQuery}".</p>`;
+                return;
+            }
+            for (let singleuser of response.items) {
+                showResultUI(singleuser);
+            }
+        }).catch((error) => {
+            console.error(error);
+            main_container.innerHTML = `<p class="error">Search failed. Please try again.</p>`;
+        });
+    }, 500); // 500ms debounce delay
+});
+// Prevent form submission
+fromSubmit.addEventListener("submit", (event) => {
+    event.preventDefault();
+});
 export {};
 //# sourceMappingURL=index.js.map
